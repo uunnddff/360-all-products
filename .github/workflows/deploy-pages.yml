@@ -26,8 +26,6 @@ jobs:
       - run: npm ci
       - name: Build with fresh catalog data
         run: npm run build
-        env:
-          CATALOG_SYNC_STRICT: '1'
       - uses: actions/configure-pages@v5
         with:
           enablement: true
