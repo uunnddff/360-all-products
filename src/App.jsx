@@ -24,8 +24,26 @@ function Logo(){ return <span className="brand" aria-label="Актион 360"><i
 function Header(){ return <><div className="utility"><img src={asset('assets/action-mark.svg')} alt="Актион"/><span>Ольга Литенькова</span></div><header><div><Logo/><p>Справочно-образовательная платформа</p></div><nav><a href="#products">Вызовы 2026–2027</a><a href="#accounting">Кейсы внедрения</a><a href="#finance">ИИ-трансформация</a></nav></header></> }
 
 function Section({name,products}){
+  if (name === 'Бухгалтерия') return <AccountingSection products={products}/>;
   const id = `direction-${name.toLowerCase().replace(/[^а-яa-z0-9]+/gi,'-')}`;
   return <section className="section" id={id}><div className="section-heading"><h2>{name}</h2><p>{products.length} {products.length === 1 ? 'продукт' : products.length < 5 ? 'продукта' : 'продуктов'}</p></div><div className="cards">{products.map((product,index)=><ProductCard key={`${product.title}-${index}`} product={product}/>)}</div></section>
+}
+
+function AccountingSection({products}){
+  const byTitle = title => products.find(product => product.title === title);
+  const cards = [
+    ['Актион Бухгалтерия', 'featured'],
+    ['Актион Бухгалтерия. Контрагенты', 'counterparty'],
+    ['Актион Бухгалтерия. Отраслевой учет', 'industry'],
+    ['Актион Бухгалтерия. ИИ-трансформация. ИИ-компетенции', 'ai'],
+    ['Актион Бухгалтерия. ИИ-трансформация. БухИИ + ИИ-компетенции', 'ai'],
+    ['Актион Цифровая бухгалтерия с Монитором рисков', 'monitor'],
+  ].map(([title,variant])=>({product:byTitle(title),variant})).filter(item=>item.product);
+
+  return <section className="section section--accounting" id="direction-бухгалтерия">
+    <div className="section-heading"><h2>Бухгалтерия</h2><p>Для бухгалтерии коммерческой компании</p></div>
+    <div className="accounting-cards">{cards.map(({product,variant})=><ProductCard key={product.title} product={product} variant={variant}/>)}</div>
+  </section>;
 }
 
 export default function App(){
