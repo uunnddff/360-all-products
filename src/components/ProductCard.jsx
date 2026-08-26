@@ -26,7 +26,10 @@ function AccountingCard({ product, variant }) {
     const image = variant === 'featured' ? 'accounting-platform.png' : 'risk-monitor.png';
     return <article className={`catalog-card catalog-card--wide catalog-card--${variant}`}>
       <div className="catalog-card__wide-media"><img src={asset(`assets/accounting-cards/${image}`)} alt="" /></div>
-      <CardCopy product={product} dark={variant === 'featured'} displayTitle={displayTitle} />
+      <div className="catalog-card__wide-content">
+        {variant === 'featured' && <span className="catalog-card__base-badge">База</span>}
+        <CardCopy product={product} dark={variant === 'featured'} displayTitle={displayTitle} />
+      </div>
     </article>;
   }
 
@@ -41,7 +44,11 @@ function AccountingCard({ product, variant }) {
   return <article className="catalog-card catalog-card--media">
     <div className="catalog-card__media">
       {isCounterparty
-        ? <img className="catalog-card__photo catalog-card__photo--counterparty" src={asset('assets/accounting-cards/counterparties.png')} alt="" />
+        ? <div className="risk-preview">
+          <div className="risk-preview__title"><strong>ООО «Ромашка»</strong><span>63% риска</span></div>
+          {['Массовый руководитель','Рентабельность низкая','Нет сотрудников'].map(item=><div className="risk-preview__row" key={item}><img src={asset('assets/accounting-cards/close.svg')} alt="" />{item}</div>)}
+          <div className="risk-preview__row"><img src={asset('assets/accounting-cards/tick.svg')} alt="" />1 фактор надежности</div>
+        </div>
         : <><span className="catalog-card__new">Новинка</span><img className="catalog-card__photo" src={asset('assets/accounting-cards/industry-accounting.png')} alt="" /></>}
     </div>
     <CardCopy product={product} displayTitle={displayTitle} />
