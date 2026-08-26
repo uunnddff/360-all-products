@@ -1,1 +1,0 @@
-{"scripts":{"sync:catalog":"node scripts/sync-catalog.mjs","predev":"npm run sync:catalog","dev":"vite --host 0.0.0.0","prebuild":"npm run sync:catalog","build":"vite build","preview":"vite preview --host 0.0.0.0"},"dependencies":{"@vitejs/plugin-react":"latest","react":"latest","react-dom":"latest","vite":"latest"}}
