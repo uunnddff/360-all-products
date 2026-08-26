@@ -1,6 +1,7 @@
 import ProductCard from './components/ProductCard';
 import { useState } from 'react';
 import catalog from './catalog.generated.json';
+import Admin from './Admin';
 
 const asset = path => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
 
@@ -47,6 +48,7 @@ function AccountingSection({products}){
 }
 
 export default function App(){
+  if (window.location.hash === '#admin') return <Admin/>;
   const [active, setActive] = useState(null);
   const [animationKey, setAnimationKey] = useState(0);
   const selectDirection = label => { setActive(label); setAnimationKey(key => key + 1); };
