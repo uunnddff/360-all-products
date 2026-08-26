@@ -22,4 +22,10 @@
 
 .catalog-card{cursor:pointer}.catalog-card--ai{grid-column:auto;width:100%}.direction-content{background:#fff;animation-duration:950ms;animation-timing-function:cubic-bezier(.16,1,.3,1)}.direction-content .section:nth-child(odd){background:#fff}.direction-content .section:nth-child(odd) .product-card{background:var(--warm)}.direction-content .section:nth-child(even){background:var(--warm)}.direction-content .section:nth-child(even) .product-card{background:#fff}.section--accounting{background:#fff}.section--accounting .catalog-card--media,.section--accounting .catalog-card--monitor{background:var(--warm)}
 
+/* Card interaction: the background grows by 8px in total while content stays still. */
+.product-card,.catalog-card{position:relative;isolation:isolate;cursor:pointer;overflow:visible}
+.product-card::before,.catalog-card::before{content:"";position:absolute;z-index:-1;inset:0;border-radius:inherit;background:inherit;transition:inset 180ms cubic-bezier(.22,1,.36,1)}
+.product-card:hover::before,.catalog-card:hover::before{inset:-4px}
+.catalog-card__ai-badge{align-self:flex-start;width:max-content;max-width:100%;flex:0 0 auto}
+
 @keyframes direction-in{0%{opacity:0;transform:translateY(36px)}35%{opacity:.2}72%{opacity:.72}100%{opacity:1;transform:translateY(0)}}

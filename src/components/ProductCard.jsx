@@ -40,12 +40,9 @@ function AccountingCard({ product, variant }) {
   const isCounterparty = variant === 'counterparty';
   return <article className="catalog-card catalog-card--media">
     <div className="catalog-card__media">
-      <span className="catalog-card__new">Новинка</span>
-      {isCounterparty ? <div className="risk-preview">
-        <div className="risk-preview__title"><strong>ООО «Ромашка»</strong><span>63% риска</span></div>
-        {['Массовый руководитель','Рентабельность низкая','Нет сотрудников'].map(item=><div className="risk-preview__row" key={item}><img src={asset('assets/accounting-cards/close.svg')} alt="" />{item}</div>)}
-        <div className="risk-preview__row"><img src={asset('assets/accounting-cards/tick.svg')} alt="" />1 фактор надежности</div>
-      </div> : <img className="catalog-card__photo" src={asset('assets/accounting-cards/industry-accounting.png')} alt="" />}
+      {isCounterparty
+        ? <img className="catalog-card__photo" src={asset('assets/accounting-cards/counterparties.png')} alt="" />
+        : <><span className="catalog-card__new">Новинка</span><img className="catalog-card__photo" src={asset('assets/accounting-cards/industry-accounting.png')} alt="" /></>}
     </div>
     <CardCopy product={product} displayTitle={displayTitle} />
   </article>;
