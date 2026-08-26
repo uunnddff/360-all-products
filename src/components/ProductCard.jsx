@@ -41,7 +41,7 @@ function AccountingCard({ product, variant }) {
   return <article className="catalog-card catalog-card--media">
     <div className="catalog-card__media">
       {isCounterparty
-        ? <img className="catalog-card__photo" src={asset('assets/accounting-cards/counterparties.png')} alt="" />
+        ? <img className="catalog-card__photo catalog-card__photo--counterparty" src={asset('assets/accounting-cards/counterparties.png')} alt="" />
         : <><span className="catalog-card__new">Новинка</span><img className="catalog-card__photo" src={asset('assets/accounting-cards/industry-accounting.png')} alt="" /></>}
     </div>
     <CardCopy product={product} displayTitle={displayTitle} />
