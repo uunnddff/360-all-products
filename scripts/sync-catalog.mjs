@@ -5,19 +5,19 @@ import { join } from 'node:path';
 
 const SPREADSHEET_ID = '1qRbHHY_05Wxq_lvCFYMdSansiwjfgOmD3Vul1OMW4Ng';
 const OUTPUT = new URL('../src/catalog.generated.json', import.meta.url);
-const SHEETS = [
-  'Бухгалтерия',
-  'Финансы',
-  'Кадры и HR',
-  'Право',
-  'ОТ, Промка, Экология',
-  'Бюджет',
-  'Медицина',
-  'Образование',
-  'Лидерство, продажи, маркетинг',
-  'Цифровые навыки и ресурс команд',
-  'Строительство',
-  'Культура',
+const DIRECTIONS = [
+  { name: 'Бухгалтерия', sources: [/^Актион Бухгалтерия$/] },
+  { name: 'Финансы', sources: [/^Актион Финансы$/] },
+  { name: 'Кадры и HR', sources: [/^Актион Кадры и HR$/] },
+  { name: 'Право', sources: [/^Актион Право$/] },
+  { name: 'ОТ, Промка, Экология', sources: [/^Актион Охрана труда/] },
+  { name: 'Бюджет', sources: [/^Актион Госфинансы$/, /^Актион Госзакупки$/] },
+  { name: 'Медицина', sources: [/^Актион Медицина$/] },
+  { name: 'Образование', sources: [/^Актион Образование$/] },
+  { name: 'Лидерство, продажи, маркетинг', sources: [/^Актион Управление$/] },
+  { name: 'Цифровые навыки и ресурс команд', sources: [/^Актион Цифровые навыки/] },
+  { name: 'Строительство', sources: [/^Актион ПроТех$/] },
+  { name: 'Культура', sources: [/^Актион Культура$/] },
 ];
 
 const clean = value => String(value ?? '')
@@ -54,9 +54,9 @@ function columnIndex(reference) {
 function parseSheet(xml, sharedStrings) {
   return [...xml.matchAll(/<row(?:\s[^>]*)?>([\s\S]*?)<\/row>/g)].map(rowMatch => {
     const cells = [];
-    for (const cellMatch of rowMatch[1].matchAll(/<c\s([^>]*)>([\s\S]*?)<\/c>/g)) {
+    for (const cellMatch of rowMatch[1].matchAll(/<c\s([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
       const attrs = cellMatch[1];
-      const body = cellMatch[2];
+      const body = cellMatch[2] || '';
       const reference = attrs.match(/\br="([^"]+)"/)?.[1] || 'A1';
       const type = attrs.match(/\bt="([^"]+)"/)?.[1];
       const raw = body.match(/<v>([\s\S]*?)<\/v>/)?.[1] || '';
@@ -72,16 +72,23 @@ function splitDescription(value) {
   return { lead: paragraphs.shift() || '', details: paragraphs.join('\n\n') };
 }
 
-function normalizeProduct(cells, firstRowIsProduct = false) {
-  let [title, description, audience, price, resource] = cells.map(clean);
+function normalizeProduct(cells, columns, firstRowIsProduct = false) {
+  let title = clean(cells[columns.title]);
+  let description = clean(cells[columns.description]);
+  let badge = clean(cells[columns.badge]);
+  let audience = clean(cells[columns.audience]);
+  let price = clean(cells[columns.price]);
+  let resource = columns.resource < 0 ? '' : clean(cells[columns.resource]);
   if (firstRowIsProduct) {
     title = title.replace(/^Блок\s+/i, '');
     description = description.replace(/^Описание\s+/i, '');
+    badge = badge.replace(/^Бейдж сверху\s+/i, '');
     audience = audience.replace(/^Кому\s+/i, '');
     price = price.replace(/^Цена\s*\([^)]*\)\s*/i, '');
+    resource = resource.replace(/^УДАЛИТЬ\s+/i, '');
   }
 
-  let badge = '';
+  if (/^(нет|no)$/i.test(badge)) badge = '';
 
   if (/^NEW\s*[-–—]\s*/i.test(title)) {
     badge = 'Новое';
@@ -101,15 +108,28 @@ function normalizeProduct(cells, firstRowIsProduct = false) {
   };
 }
 
-function loadSheet(file, sharedStrings, name, index) {
+function loadSheetProducts(file, sharedStrings, index) {
   const rows = parseSheet(unzipText(file, `xl/worksheets/sheet${index + 1}.xml`), sharedStrings);
   const hasHeader = clean(rows[0]?.[0]) === 'Блок';
+  const headers = hasHeader ? rows[0].map(clean) : [];
+  const findColumn = (pattern, fallback) => {
+    const found = headers.findIndex(header => pattern.test(header));
+    return found < 0 ? fallback : found;
+  };
+  const columns = {
+    title: findColumn(/^Блок$/i, 0),
+    description: findColumn(/^Описание$/i, 1),
+    badge: hasHeader ? findColumn(/Бейдж/i, -1) : 2,
+    audience: findColumn(/^Кому/i, 3),
+    price: findColumn(/Цена/i, 4),
+    resource: findColumn(/Преза|Промосайт|Материал/i, -1),
+  };
   const productRows = hasHeader ? rows.slice(1) : rows;
   const products = productRows
-    .map((row, index) => normalizeProduct(row, !hasHeader && index === 0))
+    .map((row, rowIndex) => normalizeProduct(row, columns, !hasHeader && rowIndex === 0))
     .filter(product => product.title);
-  if (!products.length) throw new Error(`${name}: no product rows found`);
-  return { name, products };
+  if (!products.length) throw new Error(`Sheet ${index + 1}: no product rows found`);
+  return products;
 }
 
 try {
@@ -122,8 +142,14 @@ try {
   const workbookFile = join(temporaryDirectory, 'catalog.xlsx');
   await writeFile(workbookFile, Buffer.from(await response.arrayBuffer()));
   const sharedStrings = parseSharedStrings(unzipText(workbookFile, 'xl/sharedStrings.xml'));
-  const catalog = [];
-  for (const [index, sheet] of SHEETS.entries()) catalog.push(loadSheet(workbookFile, sharedStrings, sheet, index));
+  const workbookSheetNames = [...unzipText(workbookFile, 'xl/workbook.xml').matchAll(/<sheet\b[^>]*\bname="([^"]+)"/g)]
+    .map(match => decodeXml(match[1]));
+  const catalog = DIRECTIONS.map(direction => {
+    const sourceIndexes = direction.sources.map(pattern => workbookSheetNames.findIndex(name => pattern.test(name)));
+    if (sourceIndexes.some(index => index < 0)) throw new Error(`${direction.name}: source sheet not found`);
+    const products = sourceIndexes.flatMap(index => loadSheetProducts(workbookFile, sharedStrings, index));
+    return { name: direction.name, products };
+  });
   await writeFile(OUTPUT, `${JSON.stringify(catalog, null, 2)}\n`, 'utf8');
   await rm(temporaryDirectory, { recursive: true, force: true });
   const count = catalog.reduce((sum, section) => sum + section.products.length, 0);
